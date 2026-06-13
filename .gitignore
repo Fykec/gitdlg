@@ -1,6 +1,11 @@
 # macOS
 .DS_Store
 
+#Zig
+.zig-out
+.zig-pkg
+.zig-cache
+
 # Python
 __pycache__/
 *.py[cod]
