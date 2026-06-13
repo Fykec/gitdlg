@@ -21,20 +21,54 @@ Built with Zig 0.16 and [libvaxis](https://github.com/rockorager/libvaxis). Use 
 - Locale-aware UI: English by default; Chinese when `LANG` / `LC_*` starts with `zh`
 - macOS Terminal.app compatibility for CJK subject rendering
 
-## Build
+## Build & install
 
 Requires [Zig](https://ziglang.org/) **0.16+**.
 
+### macOS
+
 ```bash
+brew install zig
+cd /path/to/gitdlg
 zig build -Doptimize=ReleaseFast
+mkdir -p ~/.local/bin
+install -m 755 zig-out/bin/gitdlg ~/.local/bin/gitdlg
+gitdlg --help
 ```
 
-Binary: `zig-out/bin/gitdlg`
+### Linux
 
-Install on your `PATH` (example):
+**Install Zig 0.16 (x86_64 example):**
 
 ```bash
+curl -fsSL -o /tmp/zig.tar.xz \
+  https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
+tar -xf /tmp/zig.tar.xz -C ~/.local/opt
+export PATH="$HOME/.local/opt/zig-x86_64-linux-0.16.0:$PATH"
+zig version   # should print 0.16.0
+```
+
+**Community mirrors:** pick one from the [mirror list](https://ziglang.org/download/community-mirrors.txt). Example:
+
+```bash
+curl -fsSL -o /tmp/zig.tar.xz \
+  https://fs.liujiacai.net/zigbuilds/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
+tar -xf /tmp/zig.tar.xz -C ~/.local/opt
+export PATH="$HOME/.local/opt/zig-x86_64-linux-0.16.0:$PATH"
+```
+
+The full tarball is **55,478,392 bytes**. If the size differs, try another mirror or the official URL.
+
+Add the `export PATH=...` line to `~/.bashrc` or `~/.zshrc` so new shells can find `zig`.
+
+**Build and install:**
+
+```bash
+cd /path/to/gitdlg
+zig build -Doptimize=ReleaseFast
+mkdir -p ~/.local/bin
 install -m 755 zig-out/bin/gitdlg ~/.local/bin/gitdlg
+gitdlg --help
 ```
 
 ## Configure Git

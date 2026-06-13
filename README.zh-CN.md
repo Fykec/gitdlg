@@ -21,20 +21,54 @@
 - 界面随 locale 切换：默认英文；`LANG` / `LC_*` 为 `zh*` 时显示中文
 - 兼容 macOS Terminal.app 中文 Subject 显示
 
-## 构建
+## 构建与安装
 
 需要 [Zig](https://ziglang.org/) **0.16+**。
 
+### macOS
+
 ```bash
+brew install zig
+cd /path/to/gitdlg
 zig build -Doptimize=ReleaseFast
+mkdir -p ~/.local/bin
+install -m 755 zig-out/bin/gitdlg ~/.local/bin/gitdlg
+gitdlg --help
 ```
 
-可执行文件：`zig-out/bin/gitdlg`
+### Linux
 
-安装到 PATH（示例）：
+**安装 Zig 0.16（x86_64 示例）：**
 
 ```bash
+curl -fsSL -o /tmp/zig.tar.xz \
+  https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
+tar -xf /tmp/zig.tar.xz -C ~/.local/opt
+export PATH="$HOME/.local/opt/zig-x86_64-linux-0.16.0:$PATH"
+zig version   # 应输出 0.16.0
+```
+
+**国内镜像：** 可从 [Zig 社区镜像列表](https://ziglang.org/download/community-mirrors.txt) 选取。例如：
+
+```bash
+curl -fsSL -o /tmp/zig.tar.xz \
+  https://fs.liujiacai.net/zigbuilds/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
+tar -xf /tmp/zig.tar.xz -C ~/.local/opt
+export PATH="$HOME/.local/opt/zig-x86_64-linux-0.16.0:$PATH"
+```
+
+完整包大小应为 **55,478,392 字节**；若不符，请换镜像或改用官方源重试。
+
+将 `export PATH=...` 写入 `~/.bashrc` 或 `~/.zshrc`，以便新终端也能找到 `zig`。
+
+**编译并安装：**
+
+```bash
+cd /path/to/gitdlg
+zig build -Doptimize=ReleaseFast
+mkdir -p ~/.local/bin
 install -m 755 zig-out/bin/gitdlg ~/.local/bin/gitdlg
+gitdlg --help
 ```
 
 ## 配置 Git
