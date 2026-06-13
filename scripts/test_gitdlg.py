@@ -73,12 +73,6 @@ class CommitTests(unittest.TestCase):
         gitdlg.handle_subject_key(subject, curses.KEY_MOUSE)
         self.assertEqual(subject.text, "")
 
-    def test_strip_warp_terminal_protocol_text(self) -> None:
-        self.assertEqual(
-            gitdlg.strip_terminal_protocol_text("│  │[M][0]:ƚƚclean subject"),
-            "clean subject",
-        )
-
     def test_commit_template_subject_keeps_trailing_space(self) -> None:
         parsed = parse_message("[M][0]: \n")
         self.assertEqual(parsed.subject, "[M][0]: ")

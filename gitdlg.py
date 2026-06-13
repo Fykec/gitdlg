@@ -246,19 +246,6 @@ class LayoutMode(Enum):
 
 
 @dataclass(frozen=True)
-class HitRect:
-    x: int
-    y: int
-    w: int
-    h: int
-
-    def contains(self, col: int, row: int) -> bool:
-        if self.w <= 0 or self.h <= 0:
-            return False
-        return self.x <= col < self.x + self.w and self.y <= row < self.y + self.h
-
-
-@dataclass(frozen=True)
 class LayoutDims:
     subject_top: int = 1
     subject_h: int = 3
@@ -316,10 +303,6 @@ DIALOG_LAYOUT = DialogLayout()
 @dataclass
 class ComputedLayout:
     mode: LayoutMode
-    subject: HitRect
-    body: HitRect
-    confirm: HitRect
-    cancel: HitRect
     field_w: int
     body_top: int
     body_h: int
@@ -332,13 +315,8 @@ class ComputedLayout:
 
     @staticmethod
     def too_small() -> ComputedLayout:
-        empty = HitRect(0, 0, 0, 0)
         return ComputedLayout(
             LayoutMode.TOO_SMALL,
-            empty,
-            empty,
-            empty,
-            empty,
             0,
             0,
             0,
@@ -388,39 +366,8 @@ class ComputedLayout:
         body_h = full_body_h if show_body else 0
         buttons_x = (pw - LAYOUT_DIMS.buttons_total()) // 2 if pw > LAYOUT_DIMS.buttons_total() else 0
 
-        def hit(px: int, py: int, x: int, y: int, w: int, h: int) -> HitRect:
-            return HitRect(px + x, py + y, w, h)
-
-        subject = hit(panel_x, panel_y, LAYOUT_DIMS.field_x, LAYOUT_DIMS.subject_top, field_w, LAYOUT_DIMS.subject_h)
-        body = (
-            hit(panel_x, panel_y, LAYOUT_DIMS.field_x, LAYOUT_DIMS.body_top(), field_w, body_h)
-            if show_body
-            else HitRect(0, 0, 0, 0)
-        )
-        confirm = (
-            hit(panel_x, panel_y, buttons_x, btn_row, LAYOUT_DIMS.button_w, LAYOUT_DIMS.button_h)
-            if show_buttons
-            else HitRect(0, 0, 0, 0)
-        )
-        cancel = (
-            hit(
-                panel_x,
-                panel_y,
-                buttons_x + LAYOUT_DIMS.button_w + LAYOUT_DIMS.button_gap,
-                btn_row,
-                LAYOUT_DIMS.button_w,
-                LAYOUT_DIMS.button_h,
-            )
-            if show_buttons
-            else HitRect(0, 0, 0, 0)
-        )
-
         return cls(
             mode,
-            subject,
-            body,
-            confirm,
-            cancel,
             field_w,
             LAYOUT_DIMS.body_top(),
             body_h,
@@ -687,23 +634,6 @@ def key_code(ch: Key) -> int | None:
     return None
 
 
-TERMINAL_PROTOCOL_TEXT_GARBAGE = ("│  │[M][0]:ƚƚ",)
-
-
-def strip_terminal_protocol_text(text: str) -> str:
-    for marker in TERMINAL_PROTOCOL_TEXT_GARBAGE:
-        text = text.replace(marker, "")
-    return text
-
-
-def write_clean_message_file(path: str | Path, subject: str, body: str) -> None:
-    write_message_file(
-        path,
-        strip_terminal_protocol_text(subject),
-        strip_terminal_protocol_text(body),
-    )
-
-
 def is_mouse_event(ch: Key) -> bool:
     return isinstance(ch, int) and ch == getattr(curses, "KEY_MOUSE", -1)
 
@@ -779,7 +709,7 @@ def run_editor(path: str, original_raw: str, parsed: Parsed, ui_msgs: Messages |
             mouse_trailer = 0
 
             if should_save(ch):
-                write_clean_message_file(path, subject.text, body.text)
+                write_message_file(path, subject.text, body.text)
                 return Result.SAVED
             if should_cancel(ch):
                 restore_message_file(path, original_raw)
@@ -800,7 +730,7 @@ def run_editor(path: str, original_raw: str, parsed: Parsed, ui_msgs: Messages |
                         focus = layout.move_focus_vertical(focus, arrow == "up")
                 elif is_enter(ch):
                     if focus == Focus.CONFIRM:
-                        write_clean_message_file(path, subject.text, body.text)
+                        write_message_file(path, subject.text, body.text)
                         return Result.SAVED
                     restore_message_file(path, original_raw)
                     return Result.CANCELLED
