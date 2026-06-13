@@ -97,3 +97,7 @@ chmod +x scripts/integration-test.sh
 |------|------|
 | `py` | Python 3 单文件（`gitdlg.py`）— **当前** |
 | `main` | Zig + libvaxis 静态二进制 |
+
+## 许可证
+
+MIT License。Copyright (c) 2026 Jiaji Yin。详见 [LICENSE](LICENSE)。

@@ -100,4 +100,4 @@ chmod +x scripts/integration-test.sh
 
 ## License
 
-See repository license (if present). Otherwise treat as personal / internal tooling until published.
+MIT License. Copyright (c) 2026 Jiaji Yin. See [LICENSE](LICENSE).
