@@ -86,4 +86,4 @@ python3 scripts/terminal-app-compat-test.py
 
 ## License
 
-See repository license (if present). Otherwise treat as personal / internal tooling until published.
+MIT License. Copyright (c) 2026 Jiaji Yin. See [LICENSE](LICENSE).

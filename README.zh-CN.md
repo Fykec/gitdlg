@@ -83,4 +83,7 @@ python3 scripts/tui-smoke-test.py
 python3 scripts/terminal-app-compat-test.py
 ```
 
+## 许可证
+
+MIT License。Copyright (c) 2026 Jiaji Yin。详见 [LICENSE](LICENSE)。
 
