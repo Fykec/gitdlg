@@ -34,6 +34,8 @@ chmod 755 ~/.local/bin/gitdlg
 gitdlg --help
 ```
 
+> **No Zig?** If you prefer not to compile the Zig version, check out the [`py`](https://github.com/Fykec/gitdlg/tree/py) branch for a pure Python 3 implementation.
+
 ### Install Zig 0.16 (if missing)
 
 **macOS:** `brew install zig`

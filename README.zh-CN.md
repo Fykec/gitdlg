@@ -34,6 +34,8 @@ chmod 755 ~/.local/bin/gitdlg
 gitdlg --help
 ```
 
+> **没有 Zig？** 如果不想编译 Zig 版本，可以 checkout 到 [`py`](https://github.com/Fykec/gitdlg/tree/py) 分支，使用纯 Python 3 实现。
+
 ### 安装 Zig 0.16（如未安装）
 
 **macOS：** `brew install zig`
