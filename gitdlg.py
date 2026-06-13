@@ -38,7 +38,7 @@ def parse_message(content: str) -> Parsed:
             continue
         if trimmed.startswith("#"):
             continue
-        lines.append(trimmed)
+        lines.append(line.lstrip())
 
     if not lines:
         return Parsed("", "")
@@ -52,7 +52,7 @@ def parse_message(content: str) -> Parsed:
 
 def format_message(subject: str, body: str) -> str:
     """Format subject/body the way git expects in COMMIT_EDITMSG."""
-    trimmed_subject = subject.strip()
+    trimmed_subject = subject.strip("\r\n").lstrip()
     trimmed_body = body.strip()
 
     if not trimmed_body:
@@ -687,6 +687,32 @@ def key_code(ch: Key) -> int | None:
     return None
 
 
+TERMINAL_PROTOCOL_TEXT_GARBAGE = ("│  │[M][0]:ƚƚ",)
+
+
+def strip_terminal_protocol_text(text: str) -> str:
+    for marker in TERMINAL_PROTOCOL_TEXT_GARBAGE:
+        text = text.replace(marker, "")
+    return text
+
+
+def write_clean_message_file(path: str | Path, subject: str, body: str) -> None:
+    write_message_file(
+        path,
+        strip_terminal_protocol_text(subject),
+        strip_terminal_protocol_text(body),
+    )
+
+
+def is_mouse_event(ch: Key) -> bool:
+    return isinstance(ch, int) and ch == getattr(curses, "KEY_MOUSE", -1)
+
+
+def is_mouse_trailer(ch: Key) -> bool:
+    code = key_code(ch)
+    return code is not None and 32 <= code <= 255
+
+
 def is_enter(ch: Key) -> bool:
     if isinstance(ch, int):
         return ch in (curses.KEY_ENTER, 10, 13)
@@ -731,6 +757,7 @@ def run_editor(path: str, original_raw: str, parsed: Parsed, ui_msgs: Messages |
         subject = SubjectInput(parsed.subject)
         body = BodyInput(parsed.body)
         focus = Focus.SUBJECT
+        mouse_trailer = 0
 
         while True:
             layout = ComputedLayout.compute(*terminal_size(stdscr))
@@ -743,9 +770,16 @@ def run_editor(path: str, original_raw: str, parsed: Parsed, ui_msgs: Messages |
                 continue
             if ch is None:
                 continue
+            if is_mouse_event(ch):
+                mouse_trailer = 2
+                continue
+            if mouse_trailer and is_mouse_trailer(ch):
+                mouse_trailer -= 1
+                continue
+            mouse_trailer = 0
 
             if should_save(ch):
-                write_message_file(path, subject.text, body.text)
+                write_clean_message_file(path, subject.text, body.text)
                 return Result.SAVED
             if should_cancel(ch):
                 restore_message_file(path, original_raw)
@@ -766,7 +800,7 @@ def run_editor(path: str, original_raw: str, parsed: Parsed, ui_msgs: Messages |
                         focus = layout.move_focus_vertical(focus, arrow == "up")
                 elif is_enter(ch):
                     if focus == Focus.CONFIRM:
-                        write_message_file(path, subject.text, body.text)
+                        write_clean_message_file(path, subject.text, body.text)
                         return Result.SAVED
                     restore_message_file(path, original_raw)
                     return Result.CANCELLED
@@ -843,11 +877,6 @@ def handle_subject_key(subject: SubjectInput, ch: Key) -> None:
         if len(ch) == 1 and ord(ch) < 32:
             return
         subject.insert(ch)
-    elif isinstance(ch, int) and 32 <= ch <= 0x10FFFF and ch not in (9, 10, 13, 27):
-        try:
-            subject.insert(chr(ch))
-        except ValueError:
-            pass
 
 
 def handle_body_key(body: BodyInput, ch: Key) -> None:
@@ -883,11 +912,6 @@ def handle_body_key(body: BodyInput, ch: Key) -> None:
         if len(ch) == 1 and ord(ch) < 32:
             return
         body.insert(ch)
-    elif isinstance(ch, int) and 32 <= ch <= 0x10FFFF and ch not in (9, 27):
-        try:
-            body.insert(chr(ch))
-        except ValueError:
-            pass
 
 
 def draw(

@@ -79,6 +79,16 @@ class CommitTests(unittest.TestCase):
             "clean subject",
         )
 
+    def test_commit_template_subject_keeps_trailing_space(self) -> None:
+        parsed = parse_message("[M][0]: \n")
+        self.assertEqual(parsed.subject, "[M][0]: ")
+        self.assertEqual(format_message(parsed.subject + "fix bug", ""), "[M][0]: fix bug\n")
+
+    def test_multiline_commit_template_is_visible(self) -> None:
+        parsed = parse_message("[M][0]: \n\nwhy:\nhow:\n\n# Please enter the commit message.\n")
+        self.assertEqual(parsed.subject, "[M][0]: ")
+        self.assertEqual(parsed.body, "why:\nhow:")
+
     def test_format_message_roundtrip(self) -> None:
         formatted = format_message("subject", "line one\nline two")
         self.assertEqual(formatted, "subject\n\nline one\nline two\n")

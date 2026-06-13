@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PTY test for commit.template strip on open and prefix on save."""
+"""PTY test for visible commit.template content."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def main() -> int:
     TEMPLATE.write_text("[M][0]: \n", encoding="utf-8")
     work = Path(tempfile.mkdtemp(prefix="gitdlg-template-"))
     msg = work / "COMMIT_EDITMSG"
-    msg.write_text("[M][0]:\n\n# Please enter the commit message.\n#\n", encoding="utf-8")
+    msg.write_text("[M][0]: \n\n# Please enter the commit message.\n#\n", encoding="utf-8")
 
     env = {
         "LANG": "en_US.UTF-8",
