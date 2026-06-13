@@ -41,9 +41,9 @@ pub fn messages(lang: Lang) Messages {
             .ui = .{
                 .subject_placeholder = "主题",
                 .body_placeholder = "正文",
-                .confirm_button = "确认(Ctrl+Enter)",
+                .confirm_button = "确认(Ctrl+S)",
                 .cancel_button = "取消(Esc)",
-                .footer_hint = "Ctrl+Enter 确认 | Esc 取消",
+                .footer_hint = "Ctrl+S 确认 | Esc 取消",
                 .terminal_too_small = "终端窗口过小，请放大后继续编辑 (Esc 取消)",
             },
             .usage =
@@ -55,9 +55,9 @@ pub fn messages(lang: Lang) Messages {
                 \\
                 \\快捷键:
                 \\  Tab / Shift+Tab  切换 主题 / 正文 / 确认 / 取消
-                \\  Ctrl+Enter/Ctrl+J  确认
+                \\  Ctrl+S           确认
                 \\  Enter            在确认按钮上确认
-                \\  Esc / Ctrl+C     取消
+                \\  Esc              取消
                 \\
             ,
             .no_tty =
@@ -71,9 +71,9 @@ pub fn messages(lang: Lang) Messages {
             .ui = .{
                 .subject_placeholder = "Subject",
                 .body_placeholder = "Body",
-                .confirm_button = "Confirm(Ctrl+Enter)",
+                .confirm_button = "Confirm(Ctrl+S)",
                 .cancel_button = "Cancel(Esc)",
-                .footer_hint = "Ctrl+Enter confirm | Esc cancel",
+                .footer_hint = "Ctrl+S confirm | Esc cancel",
                 .terminal_too_small = "Terminal too small; enlarge to edit (Esc to cancel)",
             },
             .usage =
@@ -85,9 +85,9 @@ pub fn messages(lang: Lang) Messages {
                 \\
                 \\Keys:
                 \\  Tab / Shift+Tab    Cycle Subject, Body, Confirm, Cancel
-                \\  Ctrl+Enter/Ctrl+J  Confirm
+                \\  Ctrl+S             Confirm
                 \\  Enter on Confirm   Confirm
-                \\  Esc / Ctrl+C       Cancel
+                \\  Esc                Cancel
                 \\
             ,
             .no_tty =

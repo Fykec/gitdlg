@@ -76,11 +76,9 @@ GIT_EDITOR=gitdlg git commit
 |-----|--------|
 | Tab / Shift+Tab | Cycle Subject → Body → Confirm → Cancel |
 | ↑↓←→ on buttons | Move between Confirm / Cancel |
-| Ctrl+Enter / Ctrl+J | Confirm (save message) |
-| Enter / Space on button | Activate Confirm or Cancel |
-| Esc / Ctrl+C | Cancel (restore original `COMMIT_EDITMSG`) |
-
-Note: `Ctrl+S` is often captured by the terminal; prefer **Ctrl+Enter** to confirm.
+| Ctrl+S | Confirm (save message) |
+| Enter on button | Activate Confirm or Cancel |
+| Esc | Cancel (restore original `COMMIT_EDITMSG`) |
 
 ## Test
 

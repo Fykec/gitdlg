@@ -34,7 +34,7 @@ def test_render() -> None:
 
     assert code == 0, f"expected exit 0 after cancel, got {code}"
     assert "┌" in text or "─" in text, "dialog frame not rendered"
-    assert "Ctrl+Enter" in text or "确认" in text, "footer hint missing"
+    assert "Ctrl+S" in text or "确认" in text, "footer hint missing"
     assert INDEX_COLOR_RE.search(text) is None, (
         f"indexed colors found: {INDEX_COLOR_RE.findall(text)[:5]}"
     )

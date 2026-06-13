@@ -76,11 +76,9 @@ GIT_EDITOR=gitdlg git commit
 |------|------|
 | Tab / Shift+Tab | 切换 主题 → 正文 → 确认 → 取消 |
 | 确认/取消上 ↑↓←→ | 在按钮间移动 |
-| Ctrl+Enter / Ctrl+J | 确认（保存） |
-| 按钮上 Enter / Space | 确认或取消 |
-| Esc / Ctrl+C | 取消（恢复原始 `COMMIT_EDITMSG`） |
-
-说明：终端常占用 `Ctrl+S`，确认请优先用 **Ctrl+Enter**。
+| Ctrl+S | 确认（保存） |
+| 按钮上 Enter | 确认或取消 |
+| Esc | 取消（恢复原始 `COMMIT_EDITMSG`） |
 
 ## 测试
 

@@ -456,7 +456,7 @@ pub fn run(
                             .up => layout.moveFocusVertical(focus, .up),
                             .down => layout.moveFocusVertical(focus, .down),
                         };
-                    } else if (key.matches(vaxis.Key.enter, .{}) or key.matches(' ', .{})) {
+                    } else if (key.matches(vaxis.Key.enter, .{})) {
                         if (focus == .confirm) {
                             try saveMessage(alloc, io, path, &subject_input, &body_input);
                             return .saved;
@@ -547,16 +547,11 @@ fn applyTerminalSize(
 }
 
 fn shouldSave(key: vaxis.Key) bool {
-    if (key.matches('s', .{ .ctrl = true })) return true;
-    if (key.matches(vaxis.Key.enter, .{ .ctrl = true })) return true;
-    if (key.matches('j', .{ .ctrl = true })) return true;
-    return false;
+    return key.matches('s', .{ .ctrl = true });
 }
 
 fn shouldCancel(key: vaxis.Key) bool {
-    if (key.matches('c', .{ .ctrl = true })) return true;
-    if (key.matches(vaxis.Key.escape, .{})) return true;
-    return false;
+    return key.matches(vaxis.Key.escape, .{});
 }
 
 fn saveMessage(
