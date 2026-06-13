@@ -4,10 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-zig build
-zig build test
+python3 scripts/test_gitdlg.py
 
-BIN="$ROOT/zig-out/bin/gitdlg"
+BIN=(python3 "$ROOT/gitdlg.py")
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -32,10 +31,13 @@ feat: gitdlg integration
 Body line for integration test.
 EOF
 
-"$BIN" --batch-save "$MSG_FILE"
+"${BIN[@]}" --batch-save "$MSG_FILE"
 git commit -F "$MSG_FILE"
 
 test "$(git log -1 --pretty=%s)" = "feat: gitdlg integration"
 test "$(git log -1 --pretty=%b | tr -d '\r')" = "Body line for integration test."
+
+python3 "$ROOT/scripts/tui-smoke-test.py"
+python3 "$ROOT/scripts/terminal-app-compat-test.py"
 
 echo "integration test passed"

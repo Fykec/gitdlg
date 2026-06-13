@@ -2,7 +2,7 @@
 
 **git dialog** — a TUI dialog editor for Git commit messages.
 
-Built with Zig 0.16 and [libvaxis](https://github.com/rockorager/libvaxis). Use it as `$GIT_EDITOR` / `core.editor` when you want a structured Subject + Body form instead of a plain text file.
+Python 3 stdlib only (`curses`, no pip, no compile). Use as `$GIT_EDITOR` / `core.editor` for a Subject + Body form instead of a plain text file.
 
 [中文文档](README.zh-CN.md)
 
@@ -19,36 +19,25 @@ Built with Zig 0.16 and [libvaxis](https://github.com/rockorager/libvaxis). Use 
 - Cancel restores the original file (`:q!` semantics; exit 0)
 - UI follows terminal default colors (bold / dim / reverse only)
 - Locale-aware UI: English by default; Chinese when `LANG` / `LC_*` starts with `zh`
-- macOS Terminal.app compatibility for CJK subject rendering
+- macOS / Linux terminal support (including Terminal.app CJK rendering)
 
-## Build & install
+## Install
 
-Requires [Zig](https://ziglang.org/) **0.16+**.
+Requires **Python 3.9+** with `curses` (included on typical macOS / Linux builds).
+
+**Single-file distribution:** copy `gitdlg.py` only.
 
 ```bash
-cd /path/to/gitdlg
-zig build -Doptimize=ReleaseFast
-mkdir -p ~/.local/bin
-cp zig-out/bin/gitdlg ~/.local/bin/gitdlg
-chmod 755 ~/.local/bin/gitdlg
+cp gitdlg.py ~/.local/bin/gitdlg
+chmod +x ~/.local/bin/gitdlg
 gitdlg --help
 ```
 
-### Install Zig 0.16 (if missing)
-
-**macOS:** `brew install zig`
-
-**Linux (x86_64):**
+Or point Git at the script directly:
 
 ```bash
-curl -fsSL -o /tmp/zig.tar.xz \
-  https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
-tar -xf /tmp/zig.tar.xz -C ~/.local/opt
-export PATH="$HOME/.local/opt/zig-x86_64-linux-0.16.0:$PATH"
-echo 'export PATH="$HOME/.local/opt/zig-x86_64-linux-0.16.0:$PATH"' >> ~/.bashrc
+git config --global core.editor /path/to/gitdlg.py
 ```
-
-Mirrors: [community mirror list](https://ziglang.org/download/community-mirrors.txt)
 
 ## Configure Git
 
@@ -56,7 +45,7 @@ Mirrors: [community mirror list](https://ziglang.org/download/community-mirrors.
 # persistent
 git config --global core.editor gitdlg
 # or with an absolute path:
-git config --global core.editor /path/to/gitdlg
+git config --global core.editor /path/to/gitdlg.py
 
 # one-off
 GIT_EDITOR=gitdlg git commit
@@ -75,12 +64,10 @@ GIT_EDITOR=gitdlg git commit
 ## Test
 
 ```bash
-zig build test
+python3 scripts/test_gitdlg.py
+chmod +x scripts/integration-test.sh
 ./scripts/integration-test.sh
-python3 scripts/tui-smoke-test.py
-python3 scripts/terminal-app-compat-test.py
 ```
-
 
 ## License
 
