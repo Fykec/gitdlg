@@ -7,7 +7,7 @@ Built with Zig 0.16 and [libvaxis](https://github.com/rockorager/libvaxis). Use 
 [中文文档](README.zh-CN.md)
 
 <p align="center">
-  <img src="./assets/gitdlg-screenshot.jpg" alt="gitdlg dialog-style commit editor" width="900">
+  <img src="./assets/gitdlg-usage.png" alt="gitdlg dialog-style commit editor" width="900">
 </p>
 
 ## Features
