@@ -22,7 +22,8 @@ Python 3 stdlib only (`curses`, no pip, no compile). Use as `$GIT_EDITOR` / `cor
 - UI follows terminal default colors (bold / dim / reverse only)
 - Locale-aware UI: English by default; Chinese when `LANG` / `LC_*` starts with `zh`
 - UTF-8 input via wide-character API (Chinese IME works)
-- macOS / Linux terminals: Ghostty, Terminal.app, iTerm2, Linux VT
+- macOS / Linux terminals: Warp, Ghostty, Terminal.app, iTerm2, Linux VT
+- Mouse click support restores terminal mouse mode on exit, including Warp SGR mouse sequences
 
 ## Requirements
 
@@ -79,6 +80,7 @@ GIT_EDITOR=gitdlg git commit
 | `scripts/integration-test.sh` | Git + PTY integration tests |
 | `scripts/tui-smoke-test.py` | PTY smoke tests |
 | `scripts/terminal-app-compat-test.py` | Terminal.app / CJK tests |
+| `scripts/warp-garbage-test.py` | Warp mouse / terminal protocol garbage tests |
 | `scripts/pty_harness.py` | Shared PTY test helpers |
 
 ## Test

@@ -22,7 +22,8 @@ Python 3 标准库实现（`curses`，无需 pip、无需编译）。作为 `$GI
 - 配色跟随终端默认色（仅 bold / dim / reverse）
 - 界面随 locale 切换：默认英文；`LANG` / `LC_*` 为 `zh*` 时显示中文
 - 宽字符输入（`get_wch`），中文输入法可正常使用
-- 兼容 macOS / Linux 终端：Ghostty、Terminal.app、iTerm2、Linux VT
+- 兼容 macOS / Linux 终端：Warp、Ghostty、Terminal.app、iTerm2、Linux VT
+- 支持鼠标点击，退出时会恢复终端鼠标模式，包括 Warp 的 SGR 鼠标序列
 
 ## 环境要求
 
@@ -79,6 +80,7 @@ GIT_EDITOR=gitdlg git commit
 | `scripts/integration-test.sh` | Git + PTY 集成测试 |
 | `scripts/tui-smoke-test.py` | PTY 冒烟测试 |
 | `scripts/terminal-app-compat-test.py` | Terminal.app / 中文测试 |
+| `scripts/warp-garbage-test.py` | Warp 鼠标 / 终端协议乱码测试 |
 | `scripts/pty_harness.py` | PTY 测试辅助 |
 
 ## 测试
