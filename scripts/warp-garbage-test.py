@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 import time
@@ -16,6 +17,8 @@ from pty_harness import PtySession, editor_argv  # noqa: E402
 GARBAGE = "│  │[M][0]:ƚƚ".encode("utf-8")
 EXPECTED = "clean subject"
 BAD_MARKERS = ("│", "[M", "ƚ", "ƙ")
+CANCEL_BUTTON_X = 75
+BUTTON_Y = 26
 
 
 def run_case(
@@ -65,6 +68,36 @@ def run_case(
     return ok
 
 
+def run_sgr_cancel_click() -> bool:
+    work = Path(tempfile.mkdtemp(prefix="gitdlg-warp-sgr-cancel-"))
+    msg = work / "COMMIT_EDITMSG"
+    original = "# comment\n\nexisting subject\n"
+    msg.write_text(original, encoding="utf-8")
+
+    session = PtySession(
+        editor_argv() + [str(msg)],
+        env={"LANG": "en_US.UTF-8", "TERM": "xterm-256color", "TERM_PROGRAM": "WarpTerminal"},
+        rows=40,
+        cols=120,
+    )
+    session.start()
+    try:
+        time.sleep(0.5)
+        session.send(f"\x1b[<0;{CANCEL_BUTTON_X};{BUTTON_Y}M".encode("ascii"))
+        time.sleep(0.4)
+        assert session.pid is not None
+        press_pid, _ = os.waitpid(session.pid, os.WNOHANG)
+        session.send(f"\x1b[<0;{CANCEL_BUTTON_X};{BUTTON_Y}m".encode("ascii"))
+        code = session.wait(8.0)
+    finally:
+        session.close()
+
+    saved = msg.read_text(encoding="utf-8")
+    ok = press_pid == 0 and code == 0 and saved == original
+    print(f"sgr_cancel_click: press_exited={press_pid != 0} exit={code} ok={ok}")
+    return ok
+
+
 def main() -> int:
     warp_env = {"TERM_PROGRAM": "WarpTerminal", "LANG": "zh_CN.UTF-8"}
     cases = [
@@ -84,7 +117,8 @@ def main() -> int:
         )
         for name, garbage, env, when, frag, strict in cases
     ]
-    required = [results[0], results[2]]
+    sgr_cancel = run_sgr_cancel_click()
+    required = [results[0], results[2], sgr_cancel]
     if all(required):
         print("PASS warp-garbage (startup + late bulk)")
         if all(results):

@@ -637,6 +637,10 @@ def is_mouse_event(ch: Key) -> bool:
     return isinstance(ch, int) and ch == getattr(curses, "KEY_MOUSE", -1)
 
 
+def is_escape(ch: Key) -> bool:
+    return ch == "\x1b" or (isinstance(ch, int) and ch == 27)
+
+
 def is_enter(ch: Key) -> bool:
     if isinstance(ch, int):
         return ch in (curses.KEY_ENTER, 10, 13)
@@ -696,9 +700,45 @@ def _mouse_hit(layout: ComputedLayout, my: int, mx: int) -> Focus | None:
     return None
 
 
-def _try_read_sgr(stdscr: curses.window) -> tuple[int, int] | None:
-    """Try to read an SGR mouse sequence after ESC. Returns (x, y) or None."""
+def _consume_sgr_fragment(stdscr: curses.window, ch: str) -> bool:
+    """If ch is '<' followed by an SGR fragment, consume it. Returns True if consumed."""
+    if ch != "<":
+        return False
     stdscr.timeout(0)
+    try:
+        c2 = stdscr.get_wch()
+        if not isinstance(c2, str) or not c2.isdigit():
+            if isinstance(c2, str):
+                curses.unget_wch(c2)
+            return False
+        # SGR garbage fragment — consume until 'M' or 'm'
+        while True:
+            c = stdscr.get_wch()
+            if isinstance(c, str) and c in ("M", "m"):
+                return True
+            if not (isinstance(c, str) and (c.isdigit() or c == ";")):
+                break
+    except curses.error:
+        pass
+    finally:
+        stdscr.timeout(-1)
+    return False
+
+
+def _restore_mousemask(old_mask: int) -> None:
+    try:
+        curses.mousemask(old_mask)
+    except curses.error:
+        pass
+
+
+def _mouse_event_activates(bstate: int) -> bool:
+    return bool(bstate & (curses.BUTTON1_CLICKED | curses.BUTTON1_RELEASED | curses.BUTTON1_DOUBLE_CLICKED))
+
+
+def _try_read_sgr(stdscr: curses.window) -> tuple[int, int, str] | None:
+    """Try to read an SGR mouse sequence after ESC. Returns (x, y, kind) or None."""
+    stdscr.timeout(25)
     try:
         c1 = stdscr.get_wch()
         if not isinstance(c1, str) or c1 != "[":
@@ -722,7 +762,7 @@ def _try_read_sgr(stdscr: curses.window) -> tuple[int, int] | None:
                         try:
                             mx = int(parts[1])
                             my = int(parts[2])
-                            return mx, my
+                            return mx, my, c
                         except ValueError:
                             return None
                     return None
@@ -757,6 +797,7 @@ def run_editor(path: str, original_raw: str, parsed: Parsed, ui_msgs: Messages |
             | curses.BUTTON1_RELEASED
             | curses.BUTTON1_DOUBLE_CLICKED
         )
+        old_mask = 0
         try:
             old_raw = curses.mousemask(_BUTTON1_MASK)
             if isinstance(old_raw, tuple):
@@ -766,117 +807,121 @@ def run_editor(path: str, original_raw: str, parsed: Parsed, ui_msgs: Messages |
             _debug(f"mousemask OK  mask=0x{_BUTTON1_MASK:x}  old=0x{old_mask:x}  raw={old_raw!r}")
         except curses.error as exc:
             _debug(f"mousemask FAILED: {exc}")
-            pass
 
         subject = SubjectInput(parsed.subject)
         body = BodyInput(parsed.body)
         focus = Focus.SUBJECT
-        _frame_count = 0
+        frame_count = 0
 
-        while True:
-            layout = ComputedLayout.compute(*terminal_size(stdscr))
-            draw(stdscr, layout, focus, ui, subject, body)
-            stdscr.refresh()
-            _frame_count += 1
-            if _frame_count == 1:
-                _debug(
-                    f"first frame: term=({layout.frame_x+layout.frame_w},{layout.frame_y+layout.frame_h}) "
-                    f"panel=({layout.frame_x+1},{layout.frame_y+1}) "
-                    f"field_w={layout.field_w} body_h={layout.body_h} "
-                    f"btns={layout.shows_buttons()} btns_x={layout.buttons_x} btn_row={layout.btn_row} "
-                    f"mode={layout.mode.name}"
-                )
+        try:
+            while True:
+                layout = ComputedLayout.compute(*terminal_size(stdscr))
+                draw(stdscr, layout, focus, ui, subject, body)
+                stdscr.refresh()
+                frame_count += 1
+                if frame_count == 1:
+                    _debug(
+                        f"first frame: term=({layout.frame_x+layout.frame_w},{layout.frame_y+layout.frame_h}) "
+                        f"panel=({layout.frame_x+1},{layout.frame_y+1}) "
+                        f"field_w={layout.field_w} body_h={layout.body_h} "
+                        f"btns={layout.shows_buttons()} btns_x={layout.buttons_x} btn_row={layout.btn_row} "
+                        f"mode={layout.mode.name}"
+                    )
 
-            try:
-                ch = read_key(stdscr)
-            except curses.error:
-                continue
-            if ch is None:
-                continue
-            # Log key events to diagnose input stream (cap at 20 frames to avoid spam)
-            if _frame_count <= 20 and not is_mouse_event(ch):
-                ch_repr = f"int({ch})" if isinstance(ch, int) else f"str({ch!r})"
-                _debug(f"key (frame={_frame_count}): {ch_repr}")
-            if is_mouse_event(ch):
-                _debug(f"KEY_MOUSE detected (frame={_frame_count})")
                 try:
-                    _, mx, my, _, bstate = curses.getmouse()
-                    _debug(f"getmouse: mx={mx} my={my} bstate=0x{bstate:x} mask_match={'YES' if bstate & _BUTTON1_MASK else 'NO'}")
-                except curses.error as exc:
-                    _debug(f"getmouse FAILED: {exc}")
+                    ch = read_key(stdscr)
+                except curses.error:
                     continue
-                if bstate & _BUTTON1_MASK:
-                    hit = _mouse_hit(layout, my, mx)
-                    _debug(f"_mouse_hit({my},{mx}) → {hit.name if hit else 'None'}")
-                    if hit == Focus.CONFIRM:
-                        write_message_file(path, subject.text, body.text)
-                        return Result.SAVED
-                    if hit == Focus.CANCEL:
-                        restore_message_file(path, original_raw)
-                        return Result.CANCELLED
-                    if hit is not None:
-                        focus = hit
-                continue
-
-            # Raw ESC may start an SGR mouse sequence in terminals that
-            # don't negotiate ncurses mouse protocol properly (e.g. Warp).
-            if isinstance(ch, int) and ch == 27:
-                sgr = _try_read_sgr(stdscr)
-                if sgr is not None:
-                    mx, my = sgr
-                    _debug(f"SGR mouse: mx={mx} my={my}")
-                    hit = _mouse_hit(layout, my, mx)
-                    if hit == Focus.CONFIRM:
-                        write_message_file(path, subject.text, body.text)
-                        return Result.SAVED
-                    if hit == Focus.CANCEL:
-                        restore_message_file(path, original_raw)
-                        return Result.CANCELLED
-                    if hit is not None:
-                        focus = hit
+                if ch is None:
+                    continue
+                if frame_count <= 20 and not is_mouse_event(ch):
+                    ch_repr = f"int({ch})" if isinstance(ch, int) else f"str({ch!r})"
+                    _debug(f"key (frame={frame_count}): {ch_repr}")
+                if is_mouse_event(ch):
+                    _debug(f"KEY_MOUSE detected (frame={frame_count})")
+                    try:
+                        _, mx, my, _, bstate = curses.getmouse()
+                        _debug(f"getmouse: mx={mx} my={my} bstate=0x{bstate:x} mask_match={'YES' if bstate & _BUTTON1_MASK else 'NO'}")
+                    except curses.error as exc:
+                        _debug(f"getmouse FAILED: {exc}")
+                        continue
+                    if bstate & _BUTTON1_MASK:
+                        hit = _mouse_hit(layout, my, mx)
+                        _debug(f"_mouse_hit({my},{mx}) → {hit.name if hit else 'None'}")
+                        if _mouse_event_activates(bstate):
+                            if hit == Focus.CONFIRM:
+                                write_message_file(path, subject.text, body.text)
+                                return Result.SAVED
+                            if hit == Focus.CANCEL:
+                                restore_message_file(path, original_raw)
+                                return Result.CANCELLED
+                        if hit is not None:
+                            focus = hit
                     continue
 
-            if should_save(ch):
-                write_message_file(path, subject.text, body.text)
-                return Result.SAVED
-            if should_cancel(ch):
-                restore_message_file(path, original_raw)
-                return Result.CANCELLED
+                if is_escape(ch):
+                    sgr = _try_read_sgr(stdscr)
+                    if sgr is not None:
+                        mx, my, kind = sgr
+                        _debug(f"SGR mouse: mx={mx} my={my} kind={kind}")
+                        hit = _mouse_hit(layout, my, mx)
+                        if kind == "m":
+                            if hit == Focus.CONFIRM:
+                                write_message_file(path, subject.text, body.text)
+                                return Result.SAVED
+                            if hit == Focus.CANCEL:
+                                restore_message_file(path, original_raw)
+                                return Result.CANCELLED
+                        if hit is not None:
+                            focus = hit
+                        continue
 
-            tab_dir = tab_direction(ch)
-            if tab_dir is not None:
-                focus = layout.focus_cycle(focus, tab_dir)
-            elif focus.is_button():
-                if not layout.shows_buttons():
-                    focus = Focus.SUBJECT
-                elif (arrow := arrow_direction(ch)) is not None:
-                    if arrow == "left" and focus == Focus.CANCEL:
-                        focus = Focus.CONFIRM
-                    elif arrow == "right" and focus == Focus.CONFIRM:
-                        focus = Focus.CANCEL
-                    elif arrow in ("up", "down"):
-                        focus = layout.move_focus_vertical(focus, arrow == "up")
-                elif is_enter(ch):
-                    if focus == Focus.CONFIRM:
-                        write_message_file(path, subject.text, body.text)
-                        return Result.SAVED
+                if isinstance(ch, str) and _consume_sgr_fragment(stdscr, ch):
+                    _debug("SGR fragment consumed")
+                    continue
+
+                if should_save(ch):
+                    write_message_file(path, subject.text, body.text)
+                    return Result.SAVED
+                if should_cancel(ch):
                     restore_message_file(path, original_raw)
                     return Result.CANCELLED
-            elif focus == Focus.SUBJECT:
-                if is_enter(ch):
-                    focus = layout.enter_from_subject()
-                else:
-                    handle_subject_key(subject, ch)
-            elif focus == Focus.BODY:
-                if layout.shows_body():
-                    handle_body_key(body, ch)
-                else:
-                    focus = Focus.SUBJECT
 
-            focus = layout.clamp_focus(focus)
+                tab_dir = tab_direction(ch)
+                if tab_dir is not None:
+                    focus = layout.focus_cycle(focus, tab_dir)
+                elif focus.is_button():
+                    if not layout.shows_buttons():
+                        focus = Focus.SUBJECT
+                    elif (arrow := arrow_direction(ch)) is not None:
+                        if arrow == "left" and focus == Focus.CANCEL:
+                            focus = Focus.CONFIRM
+                        elif arrow == "right" and focus == Focus.CONFIRM:
+                            focus = Focus.CANCEL
+                        elif arrow in ("up", "down"):
+                            focus = layout.move_focus_vertical(focus, arrow == "up")
+                    elif is_enter(ch):
+                        if focus == Focus.CONFIRM:
+                            write_message_file(path, subject.text, body.text)
+                            return Result.SAVED
+                        restore_message_file(path, original_raw)
+                        return Result.CANCELLED
+                elif focus == Focus.SUBJECT:
+                    if is_enter(ch):
+                        focus = layout.enter_from_subject()
+                    else:
+                        handle_subject_key(subject, ch)
+                elif focus == Focus.BODY:
+                    if layout.shows_body():
+                        handle_body_key(body, ch)
+                    else:
+                        focus = Focus.SUBJECT
+
+                focus = layout.clamp_focus(focus)
+        finally:
+            _restore_mousemask(old_mask)
 
     return curses.wrapper(_main)
-
 
 def should_save(ch: Key) -> bool:
     if isinstance(ch, str):
