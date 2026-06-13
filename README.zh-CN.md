@@ -25,20 +25,12 @@
 
 需要 [Zig](https://ziglang.org/) **0.16+**。
 
-### 用 Make 构建（Linux / macOS）
-
 ```bash
 cd /path/to/gitdlg
-make release         # 自动检测 zig 0.16 并编译
-make install         # 编译并安装到 ~/.local/bin
-```
-
-### 手动构建
-
-```bash
 zig build -Doptimize=ReleaseFast
 mkdir -p ~/.local/bin
-install -m 755 zig-out/bin/gitdlg ~/.local/bin/gitdlg
+cp zig-out/bin/gitdlg ~/.local/bin/gitdlg
+chmod 755 ~/.local/bin/gitdlg
 gitdlg --help
 ```
 

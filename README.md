@@ -25,20 +25,12 @@ Built with Zig 0.16 and [libvaxis](https://github.com/rockorager/libvaxis). Use 
 
 Requires [Zig](https://ziglang.org/) **0.16+**.
 
-### With Make (Linux / macOS)
-
 ```bash
 cd /path/to/gitdlg
-make release         # build with zig 0.16 (auto-detected)
-make install         # build + install to ~/.local/bin
-```
-
-### Manual build
-
-```bash
 zig build -Doptimize=ReleaseFast
 mkdir -p ~/.local/bin
-install -m 755 zig-out/bin/gitdlg ~/.local/bin/gitdlg
+cp zig-out/bin/gitdlg ~/.local/bin/gitdlg
+chmod 755 ~/.local/bin/gitdlg
 gitdlg --help
 ```
 
