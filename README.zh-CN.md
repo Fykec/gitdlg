@@ -7,7 +7,7 @@
 [English README](README.md)
 
 <p align="center">
-  <img src="./assets/gitdlg-screenshot.png" alt="gitdlg 对话框提交信息编辑器" width="900">
+  <img src="./assets/gitdlg-screenshot.jpg" alt="gitdlg 对话框提交信息编辑器" width="900">
 </p>
 
 ## 功能
