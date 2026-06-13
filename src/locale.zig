@@ -63,15 +63,7 @@ pub fn messages(lang: Lang) Messages {
             .no_tty =
                 \\gitdlg: 需要交互式终端 (TTY)。
                 \\
-                \\在终端里提交（推荐）:
-                \\  git commit
-                \\
-                \\在 Cursor / VS Code 源代码管理里提交时，请开启:
-                \\  "git.terminalGitEditor": true
-                \\或在设置里搜索 “terminal git editor”。
-                \\
-                \\也可把 core.editor 设为 scripts/gitdlg-wrapper.sh
-                \\（需本机有已打开的终端会话）。
+                \\请在终端里执行 git commit。
                 \\
             ,
         },
@@ -101,15 +93,7 @@ pub fn messages(lang: Lang) Messages {
             .no_tty =
                 \\gitdlg: an interactive terminal (TTY) is required.
                 \\
-                \\Commit from a terminal (recommended):
-                \\  git commit
-                \\
-                \\From Cursor / VS Code source control, enable:
-                \\  "git.terminalGitEditor": true
-                \\or search settings for “terminal git editor”.
-                \\
-                \\Or set core.editor to scripts/gitdlg-wrapper.sh
-                \\(requires an open terminal session on this machine).
+                \\Please run git commit from a terminal.
                 \\
             ,
         },

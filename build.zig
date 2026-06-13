@@ -1,4 +1,17 @@
 const std = @import("std");
+const builtin = @import("builtin");
+
+comptime {
+    const current = builtin.zig_version;
+    const min = std.SemanticVersion{ .major = 0, .minor = 16, .patch = 0 };
+    if (current.order(min) == .lt) {
+        @compileError(std.fmt.comptimePrint(
+            "gitdlg requires Zig >= 0.16.0 (detected {}.{}).\n" ++
+            "Install zig 0.16: curl -fsSL https://ziglang.org/download/0.16.0/zig-linux-x86_64-0.16.0.tar.xz | tar xJ",
+            .{ current.major, current.minor },
+        ));
+    }
+}
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});

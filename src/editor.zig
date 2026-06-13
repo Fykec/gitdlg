@@ -400,7 +400,7 @@ pub fn run(
     vx.caps.sgr_pixels = false;
     try vx.setMouseMode(writer, true);
 
-    // vaxis starts at 0×0 until resize; Cursor/VS Code may not emit winsize before first draw.
+    // vaxis starts at 0×0 until resize; some terminal emulators may not emit winsize before first draw.
     try applyTerminalSize(alloc, &vx, &tty, writer, readTerminalSize(&tty));
 
     var subject_input = TextInput.init(alloc);
