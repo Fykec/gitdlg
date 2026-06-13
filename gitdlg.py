@@ -445,7 +445,9 @@ class ComputedLayout:
         }[self.mode]
 
 
-class SubjectInput:
+class _TextBuffer:
+    """Shared cursor/text buffer for Subject and Body fields."""
+
     def __init__(self, text: str = "") -> None:
         self.text = text
         self.cursor = len(text)
@@ -485,37 +487,18 @@ class SubjectInput:
         return len(self.text) == 0
 
 
-class BodyInput:
-    def __init__(self, text: str = "") -> None:
-        self.text = text
-        self.cursor = len(text)
+class SubjectInput(_TextBuffer):
+    """Single-line subject field (tabs allowed, no vertical movement)."""
+    pass
+
+
+class BodyInput(_TextBuffer):
+    """Multi-line body field (tabs rejected, line-aware home/end)."""
 
     def insert(self, s: str) -> None:
         if s == "\t":
             return
-        self.text = self.text[: self.cursor] + s + self.text[self.cursor :]
-        self.cursor += len(s)
-
-    def backspace(self) -> None:
-        if self.cursor == 0:
-            return
-        prev = prev_codepoint_start(self.text, self.cursor)
-        self.text = self.text[:prev] + self.text[self.cursor :]
-        self.cursor = prev
-
-    def delete(self) -> None:
-        if self.cursor >= len(self.text):
-            return
-        nxt = next_codepoint_end(self.text, self.cursor)
-        self.text = self.text[: self.cursor] + self.text[nxt:]
-
-    def move_left(self) -> None:
-        if self.cursor > 0:
-            self.cursor = prev_codepoint_start(self.text, self.cursor)
-
-    def move_right(self) -> None:
-        if self.cursor < len(self.text):
-            self.cursor = next_codepoint_end(self.text, self.cursor)
+        super().insert(s)
 
     def move_up(self) -> None:
         self.cursor = move_vertical(self.text, self.cursor, -1)
@@ -532,9 +515,6 @@ class BodyInput:
     def insert_newline(self) -> None:
         self.text = self.text[: self.cursor] + "\n" + self.text[self.cursor :]
         self.cursor += 1
-
-    def is_empty(self) -> bool:
-        return len(self.text) == 0
 
 
 def prev_codepoint_start(text: str, pos: int) -> int:
@@ -782,58 +762,49 @@ def arrow_direction(ch: Key) -> str | None:
     return mapping.get(ch)
 
 
-def handle_subject_key(subject: SubjectInput, ch: Key) -> None:
+def _handle_text_move(field: _TextBuffer, ch: Key) -> bool:
+    """Handle common text-movement keys for any text field. Returns True if handled."""
     if is_backspace(ch):
-        subject.backspace()
+        field.backspace()
     elif isinstance(ch, int) and ch == curses.KEY_DC:
-        subject.delete()
+        field.delete()
     elif isinstance(ch, int) and ch == curses.KEY_LEFT:
-        subject.move_left()
+        field.move_left()
     elif isinstance(ch, int) and ch == curses.KEY_RIGHT:
-        subject.move_right()
+        field.move_right()
     elif isinstance(ch, int) and ch in (curses.KEY_HOME,):
-        subject.move_home()
+        field.move_home()
     elif isinstance(ch, int) and ch in (curses.KEY_END,):
-        subject.move_end()
+        field.move_end()
     elif key_code(ch) == (ord("A") & 0x1F):
-        subject.move_home()
+        field.move_home()
     elif key_code(ch) == (ord("E") & 0x1F):
-        subject.move_end()
+        field.move_end()
     elif key_code(ch) == (ord("B") & 0x1F):
-        subject.move_left()
+        field.move_left()
     elif key_code(ch) == (ord("F") & 0x1F):
-        subject.move_right()
-    elif isinstance(ch, str):
+        field.move_right()
+    else:
+        return False
+    return True
+
+
+def handle_subject_key(subject: SubjectInput, ch: Key) -> None:
+    if _handle_text_move(subject, ch):
+        return
+    if isinstance(ch, str):
         if len(ch) == 1 and ord(ch) < 32:
             return
         subject.insert(ch)
 
 
 def handle_body_key(body: BodyInput, ch: Key) -> None:
-    if is_backspace(ch):
-        body.backspace()
-    elif isinstance(ch, int) and ch == curses.KEY_DC:
-        body.delete()
-    elif isinstance(ch, int) and ch == curses.KEY_LEFT:
-        body.move_left()
-    elif isinstance(ch, int) and ch == curses.KEY_RIGHT:
-        body.move_right()
-    elif isinstance(ch, int) and ch == curses.KEY_UP:
+    if _handle_text_move(body, ch):
+        return
+    if isinstance(ch, int) and ch == curses.KEY_UP:
         body.move_up()
     elif isinstance(ch, int) and ch == curses.KEY_DOWN:
         body.move_down()
-    elif isinstance(ch, int) and ch in (curses.KEY_HOME,):
-        body.move_home()
-    elif isinstance(ch, int) and ch in (curses.KEY_END,):
-        body.move_end()
-    elif key_code(ch) == (ord("A") & 0x1F):
-        body.move_home()
-    elif key_code(ch) == (ord("E") & 0x1F):
-        body.move_end()
-    elif key_code(ch) == (ord("B") & 0x1F):
-        body.move_left()
-    elif key_code(ch) == (ord("F") & 0x1F):
-        body.move_right()
     elif is_enter(ch):
         body.insert_newline()
     elif isinstance(ch, str):
@@ -842,6 +813,11 @@ def handle_body_key(body: BodyInput, ch: Key) -> None:
         if len(ch) == 1 and ord(ch) < 32:
             return
         body.insert(ch)
+
+
+def _field_inner(layout: ComputedLayout, field_top: int, field_h: int, py: int, px: int) -> tuple[int, int, int, int]:
+    """Return (y, x, h, w) for the inner text area of a dialog field."""
+    return (py + field_top + 1, px + LAYOUT_DIMS.field_x + 1, field_h - 2, layout.field_w - 2)
 
 
 def draw(
@@ -956,10 +932,7 @@ def draw_subject(
     ui: UiStrings,
     subject: SubjectInput,
 ) -> None:
-    inner_y = py + LAYOUT_DIMS.subject_top + 1
-    inner_x = px + LAYOUT_DIMS.field_x + 1
-    inner_h = LAYOUT_DIMS.subject_h - 2
-    inner_w = layout.field_w - 2
+    inner_y, inner_x, inner_h, inner_w = _field_inner(layout, LAYOUT_DIMS.subject_top, LAYOUT_DIMS.subject_h, py, px)
     if inner_h <= 0 or inner_w <= 0:
         return
 
@@ -983,10 +956,7 @@ def place_cursor(
     px: int,
 ) -> None:
     if focus == Focus.SUBJECT:
-        inner_y = py + LAYOUT_DIMS.subject_top + 1
-        inner_x = px + LAYOUT_DIMS.field_x + 1
-        inner_h = LAYOUT_DIMS.subject_h - 2
-        inner_w = layout.field_w - 2
+        inner_y, inner_x, inner_h, inner_w = _field_inner(layout, LAYOUT_DIMS.subject_top, LAYOUT_DIMS.subject_h, py, px)
         if inner_h <= 0 or inner_w <= 0:
             return
         row = inner_y + (inner_h - 1) // 2
@@ -997,10 +967,7 @@ def place_cursor(
         return
 
     if focus == Focus.BODY and layout.shows_body():
-        inner_y = py + layout.body_top + 1
-        inner_x = px + LAYOUT_DIMS.field_x + 1
-        inner_h = layout.body_h - 2
-        inner_w = layout.field_w - 2
+        inner_y, inner_x, inner_h, inner_w = _field_inner(layout, layout.body_top, layout.body_h, py, px)
         if inner_h <= 0 or inner_w <= 0:
             return
         if body.is_empty():
@@ -1031,10 +998,7 @@ def draw_body(
     ui: UiStrings,
     body: BodyInput,
 ) -> None:
-    inner_y = py + layout.body_top + 1
-    inner_x = px + LAYOUT_DIMS.field_x + 1
-    inner_h = layout.body_h - 2
-    inner_w = layout.field_w - 2
+    inner_y, inner_x, inner_h, inner_w = _field_inner(layout, layout.body_top, layout.body_h, py, px)
     if inner_h <= 0 or inner_w <= 0:
         return
 
