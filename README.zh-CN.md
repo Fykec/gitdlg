@@ -6,6 +6,10 @@
 
 [English README](README.md)
 
+<p align="center">
+  <img src="./assets/gitdlg-screenshot.png" alt="gitdlg 对话框提交信息编辑器" width="900">
+</p>
+
 ## 功能
 
 - 居中对话框：Subject + Body
