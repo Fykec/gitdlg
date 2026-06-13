@@ -4,6 +4,8 @@
 
 Python 3 stdlib only (`curses`, no pip, no compile). Use as `$GIT_EDITOR` / `core.editor` for a Subject + Body form instead of a plain text file.
 
+**Single-file distribution:** copy `gitdlg.py` only.
+
 [中文文档](README.zh-CN.md)
 
 <p align="center">
@@ -19,13 +21,16 @@ Python 3 stdlib only (`curses`, no pip, no compile). Use as `$GIT_EDITOR` / `cor
 - Cancel restores the original file (`:q!` semantics; exit 0)
 - UI follows terminal default colors (bold / dim / reverse only)
 - Locale-aware UI: English by default; Chinese when `LANG` / `LC_*` starts with `zh`
-- macOS / Linux terminal support (including Terminal.app CJK rendering)
+- UTF-8 input via wide-character API (Chinese IME works)
+- macOS / Linux terminals: Ghostty, Terminal.app, iTerm2, Linux VT
+
+## Requirements
+
+- **Python 3.9+** with `curses` (typical macOS / Linux builds)
+- Interactive TTY (`git commit` from a terminal)
+- UTF-8 locale recommended for CJK (`LANG=en_US.UTF-8` or `zh_CN.UTF-8`)
 
 ## Install
-
-Requires **Python 3.9+** with `curses` (included on typical macOS / Linux builds).
-
-**Single-file distribution:** copy `gitdlg.py` only.
 
 ```bash
 cp gitdlg.py ~/.local/bin/gitdlg
@@ -33,19 +38,19 @@ chmod +x ~/.local/bin/gitdlg
 gitdlg --help
 ```
 
-Or point Git at the script directly:
+Or point Git at the script directly (recommended when not on `PATH`):
 
 ```bash
-git config --global core.editor /path/to/gitdlg.py
+git config --global core.editor "$(command -v python3) $HOME/.local/bin/gitdlg"
+# or absolute path:
+git config --global core.editor "/path/to/gitdlg.py"
 ```
 
 ## Configure Git
 
 ```bash
-# persistent
+# persistent (script must be executable, or invoke via python3)
 git config --global core.editor gitdlg
-# or with an absolute path:
-git config --global core.editor /path/to/gitdlg.py
 
 # one-off
 GIT_EDITOR=gitdlg git commit
@@ -60,6 +65,21 @@ GIT_EDITOR=gitdlg git commit
 | Ctrl+S | Confirm (save message) |
 | Enter on button | Activate Confirm or Cancel |
 | Esc | Cancel (restore original `COMMIT_EDITMSG`) |
+| Enter in Subject | Move focus to Body (or Confirm if Body hidden) |
+| Enter in Body | Insert newline |
+
+## Project layout
+
+| Path | Purpose |
+|------|---------|
+| `gitdlg.py` | **The entire app** — copy this file to distribute |
+| `AGENTS.md` | Agent guide (all coding agents) |
+| `skills/gitdlg/SKILL.md` | Detailed development guide for agents |
+| `scripts/test_gitdlg.py` | Unit tests |
+| `scripts/integration-test.sh` | Git + PTY integration tests |
+| `scripts/tui-smoke-test.py` | PTY smoke tests |
+| `scripts/terminal-app-compat-test.py` | Terminal.app / CJK tests |
+| `scripts/pty_harness.py` | Shared PTY test helpers |
 
 ## Test
 
@@ -68,6 +88,13 @@ python3 scripts/test_gitdlg.py
 chmod +x scripts/integration-test.sh
 ./scripts/integration-test.sh
 ```
+
+## Branches
+
+| Branch | Implementation |
+|--------|----------------|
+| `py` | Python 3 single-file (`gitdlg.py`) — **current** |
+| `main` | Zig + libvaxis static binary |
 
 ## License
 
