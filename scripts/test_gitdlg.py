@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import curses
 import importlib.util
 import sys
 import tempfile
@@ -66,6 +67,17 @@ class CommitTests(unittest.TestCase):
         gitdlg.handle_subject_key(subject, "好")
         self.assertEqual(subject.text, "你好")
         self.assertEqual(subject.cursor, 2)
+
+    def test_special_key_does_not_insert_character(self) -> None:
+        subject = gitdlg.SubjectInput("")
+        gitdlg.handle_subject_key(subject, curses.KEY_MOUSE)
+        self.assertEqual(subject.text, "")
+
+    def test_strip_warp_terminal_protocol_text(self) -> None:
+        self.assertEqual(
+            gitdlg.strip_terminal_protocol_text("│  │[M][0]:ƚƚclean subject"),
+            "clean subject",
+        )
 
     def test_format_message_roundtrip(self) -> None:
         formatted = format_message("subject", "line one\nline two")
