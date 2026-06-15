@@ -27,11 +27,22 @@ Requires [Zig](https://ziglang.org/) **0.16+**.
 
 ```bash
 cd /path/to/gitdlg
-zig build -Doptimize=ReleaseFast
-mkdir -p ~/.local/bin
-cp zig-out/bin/gitdlg ~/.local/bin/gitdlg
-chmod 755 ~/.local/bin/gitdlg
+make build
+make install
 gitdlg --help
+```
+
+By default, `make install` installs to `~/.local/bin/gitdlg`. Override the location with `PREFIX` or `BINDIR`:
+
+```bash
+make install PREFIX=/usr/local
+make install BINDIR=/custom/bin
+```
+
+Equivalent Zig command:
+
+```bash
+zig build -Doptimize=ReleaseFast
 ```
 
 > **No Zig?** If you prefer not to compile the Zig version, check out the [`py`](https://github.com/Fykec/gitdlg/tree/py) branch for a pure Python 3 implementation.
@@ -77,10 +88,16 @@ GIT_EDITOR=gitdlg git commit
 ## Test
 
 ```bash
-zig build test
-./scripts/integration-test.sh
-python3 scripts/tui-smoke-test.py
-python3 scripts/terminal-app-compat-test.py
+make test
+```
+
+Run individual checks:
+
+```bash
+make test-unit
+make test-integration
+make test-smoke
+make test-terminal
 ```
 
 

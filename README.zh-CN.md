@@ -27,11 +27,22 @@
 
 ```bash
 cd /path/to/gitdlg
-zig build -Doptimize=ReleaseFast
-mkdir -p ~/.local/bin
-cp zig-out/bin/gitdlg ~/.local/bin/gitdlg
-chmod 755 ~/.local/bin/gitdlg
+make build
+make install
 gitdlg --help
+```
+
+默认情况下，`make install` 会安装到 `~/.local/bin/gitdlg`。可通过 `PREFIX` 或 `BINDIR` 覆盖安装位置：
+
+```bash
+make install PREFIX=/usr/local
+make install BINDIR=/custom/bin
+```
+
+等价 Zig 命令：
+
+```bash
+zig build -Doptimize=ReleaseFast
 ```
 
 > **没有 Zig？** 如果不想编译 Zig 版本，可以 checkout 到 [`py`](https://github.com/Fykec/gitdlg/tree/py) 分支，使用纯 Python 3 实现。
@@ -77,10 +88,16 @@ GIT_EDITOR=gitdlg git commit
 ## 测试
 
 ```bash
-zig build test
-./scripts/integration-test.sh
-python3 scripts/tui-smoke-test.py
-python3 scripts/terminal-app-compat-test.py
+make test
+```
+
+也可以单独运行：
+
+```bash
+make test-unit
+make test-integration
+make test-smoke
+make test-terminal
 ```
 
 ## 许可证
