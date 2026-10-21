@@ -29,7 +29,7 @@ def msg_with_chinese_subject() -> Path:
     path = WORK / "COMMIT_EDITMSG"
     write_msg(
         path,
-        f"# Please enter the commit message.\n#\n\n{SUBJECT}\n\n{BODY}\n",
+        f"{SUBJECT}\n\n{BODY}\n",
     )
     return path
 
@@ -93,7 +93,7 @@ def test_apple_terminal_chinese_ui() -> None:
 
 def test_apple_terminal_save_chinese_roundtrip() -> None:
     msg = WORK / "COMMIT_EDITMSG.save"
-    write_msg(msg, f"# comment\n\n{SUBJECT}\n\n{BODY}\n")
+    write_msg(msg, f"{SUBJECT}\n\n{BODY}\n")
     code, _ = run_editor(
         msg,
         b"\x13",  # Ctrl+S

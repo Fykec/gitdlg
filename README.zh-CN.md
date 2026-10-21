@@ -15,7 +15,7 @@
 - 居中对话框：Subject + Body
 - Tab / Shift+Tab 切换焦点（主题 → 正文 → 确认 → 取消）
 - 确认 / 取消按钮及快捷键
-- 解析 `COMMIT_EDITMSG` 中以 `#` 开头的注释行
+- 保留提交标题和正文中以 `#` 开头的内容
 - 取消时恢复 Git 打开的原始文件（类似 vim `:q!`，退出码 0）
 - 配色跟随终端默认色（仅 bold / dim / reverse）
 - 界面随 locale 切换：默认英文；`LANG` / `LC_*` 为 `zh*` 时显示中文

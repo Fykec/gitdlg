@@ -71,14 +71,14 @@ def test_save_ctrl_s() -> None:
     msg = work / "COMMIT_EDITMSG.save"
     write_msg(
         msg,
-        "# comment\n\nfeat: from template\n\nDetails here.\n",
+        "#537879 Add image compression skill\n\n# Details\nDetails here.\n",
     )
 
-    code, _ = run_editor(msg, b"\x13", start_delay=1.0)
+    code, out = run_editor(msg, b"\x13", start_delay=1.0)
     assert code == 0, f"expected exit 0 on save, got {code}"
     saved = msg.read_text(encoding="utf-8")
-    assert "feat: from template" in saved
-    assert "Details here." in saved
+    assert b"#537879" in out, "subject not rendered"
+    assert saved == "#537879 Add image compression skill\n\n# Details\nDetails here.\n"
 
 
 def main() -> int:

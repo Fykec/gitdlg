@@ -6,7 +6,6 @@ pub const Parsed = struct {
 };
 
 /// Split a git commit message buffer into subject and body.
-/// Lines starting with `#` are treated as comments and ignored.
 pub fn parseMessage(allocator: std.mem.Allocator, content: []const u8) !Parsed {
     var lines: std.ArrayList([]const u8) = .empty;
     defer lines.deinit(allocator);
@@ -16,7 +15,6 @@ pub fn parseMessage(allocator: std.mem.Allocator, content: []const u8) !Parsed {
         const line = std.mem.trimEnd(u8, raw_line, "\r");
         const trimmed = std.mem.trim(u8, line, " \t");
         if (trimmed.len == 0) continue;
-        if (trimmed[0] == '#') continue;
         try lines.append(allocator, trimmed);
     }
 
@@ -147,15 +145,26 @@ pub fn findMessagePath(args: []const []const u8) ?[]const u8 {
     return null;
 }
 
-test "parse git template with comments" {
+test "parse hash-prefixed subject" {
+    const gpa = std.testing.allocator;
+    const parsed = try parseMessage(gpa, "#537879 Add image compression skill\n");
+    defer {
+        gpa.free(parsed.subject);
+        gpa.free(parsed.body);
+    }
+
+    try std.testing.expectEqualStrings("#537879 Add image compression skill", parsed.subject);
+    try std.testing.expectEqualStrings("", parsed.body);
+}
+
+test "parse hash-prefixed lines as content" {
     const gpa = std.testing.allocator;
     const input =
-        \\# Please enter the commit message for your changes.
-        \\# On branch main
+        \\# Release notes
         \\
-        \\feat: add gitdlg
-        \\
+        \\## Changes
         \\Body paragraph one.
+        \\#537879
         \\Body paragraph two.
         \\
     ;
@@ -166,15 +175,13 @@ test "parse git template with comments" {
         gpa.free(parsed.body);
     }
 
-    try std.testing.expectEqualStrings("feat: add gitdlg", parsed.subject);
-    try std.testing.expectEqualStrings("Body paragraph one.\nBody paragraph two.", parsed.body);
+    try std.testing.expectEqualStrings("# Release notes", parsed.subject);
+    try std.testing.expectEqualStrings("## Changes\nBody paragraph one.\n#537879\nBody paragraph two.", parsed.body);
 }
 
 test "parse chinese subject" {
     const gpa = std.testing.allocator;
     const input =
-        \\# Please enter the commit message.
-        \\
         \\修复：中文主题展示
         \\
         \\正文第一段。
@@ -209,7 +216,7 @@ test "format message roundtrip" {
 
 test "empty message" {
     const gpa = std.testing.allocator;
-    const parsed = try parseMessage(gpa, "# comment only\n");
+    const parsed = try parseMessage(gpa, " \t\r\n\n");
     defer {
         gpa.free(parsed.subject);
         gpa.free(parsed.body);
@@ -241,7 +248,7 @@ test "write and read message file" {
     const io = std.testing.io;
 
     const tmp_path = "/tmp/gitdlg-test-msg";
-    try writeMessageFile(gpa, io, tmp_path, "feat: test", "details here");
+    try writeMessageFile(gpa, io, tmp_path, "#537879 Add image compression skill", "# Details\ndetails here");
     defer std.Io.Dir.cwd().deleteFile(io, tmp_path) catch {};
 
     const parsed = try readMessageFile(gpa, io, tmp_path);
@@ -250,8 +257,8 @@ test "write and read message file" {
         gpa.free(parsed.body);
     }
 
-    try std.testing.expectEqualStrings("feat: test", parsed.subject);
-    try std.testing.expectEqualStrings("details here", parsed.body);
+    try std.testing.expectEqualStrings("#537879 Add image compression skill", parsed.subject);
+    try std.testing.expectEqualStrings("# Details\ndetails here", parsed.body);
 }
 
 test "write absolute path" {

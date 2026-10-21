@@ -15,7 +15,7 @@ Built with Zig 0.16 and [libvaxis](https://github.com/rockorager/libvaxis). Use 
 - Subject + Body form in a centered dialog
 - Tab / Shift+Tab to move focus (Subject → Body → Confirm → Cancel)
 - Confirm and Cancel buttons with keyboard shortcuts
-- Parses git `#` comment lines in `COMMIT_EDITMSG`
+- Preserves lines starting with `#` in commit subjects and bodies
 - Cancel restores the original file (`:q!` semantics; exit 0)
 - UI follows terminal default colors (bold / dim / reverse only)
 - Locale-aware UI: English by default; Chinese when `LANG` / `LC_*` starts with `zh`

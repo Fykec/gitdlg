@@ -25,17 +25,16 @@ git add file.txt
 
 MSG_FILE="$WORK/.git/COMMIT_EDITMSG"
 cat > "$MSG_FILE" <<'EOF'
-# Please enter the commit message for your changes.
-#
-feat: gitdlg integration
+#537879 Add image compression skill
 
+# Details
 Body line for integration test.
 EOF
 
 "$BIN" --batch-save "$MSG_FILE"
 git commit -F "$MSG_FILE"
 
-test "$(git log -1 --pretty=%s)" = "feat: gitdlg integration"
-test "$(git log -1 --pretty=%b | tr -d '\r')" = "Body line for integration test."
+test "$(git log -1 --pretty=%s)" = "#537879 Add image compression skill"
+test "$(git log -1 --pretty=%b | tr -d '\r')" = "$(printf '# Details\nBody line for integration test.')"
 
 echo "integration test passed"
